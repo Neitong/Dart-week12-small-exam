@@ -43,10 +43,26 @@ class _NewItemState extends State<NewItem> {
 
   void onReset() {
     // Will be implemented later - Reset all fields to the initial values
+    setState(() {
+      _nameController.text = defautName;
+      _quantityController.text = defaultQuantity.toString();
+      _selectedCategory = defaultCategory;
+    });
   }
 
   void onAdd() {
     // Will be implemented later - Create and return the new grocery
+    final enteredName = _nameController.text;
+    final enteredQuantity = int.tryParse(_quantityController.text) ?? 0;
+    final newGrocery = Grocery(
+      id: DateTime.now().toString(),
+      name: enteredName,
+      quantity: enteredQuantity,
+      category: _selectedCategory,
+    );
+
+    Navigator.of(context).pop(newGrocery);
+
   }
 
   @override
@@ -76,8 +92,20 @@ class _NewItemState extends State<NewItem> {
                 Expanded(
                   child: DropdownButtonFormField<GroceryCategory>(
                     initialValue: _selectedCategory,
-                    items: [  ],
-                    onChanged: (value) {
+                    items: GroceryCategory.values
+                        .map<DropdownMenuItem<GroceryCategory>>(
+                          (category) => DropdownMenuItem<GroceryCategory>(
+                            value: category,
+                            child: Text(
+                              GroceryCategory.values
+                                  .firstWhere((cat) => cat == category)
+                                  .label,
+                                  style: TextStyle(color: category.color),
+                            ),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (GroceryCategory? value) {
                       if (value != null) {
                         setState(() {
                           _selectedCategory = value;
