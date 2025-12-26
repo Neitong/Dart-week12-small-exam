@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '../../data/mock_grocery_repository.dart';
 import '../../models/grocery.dart';
 import 'grocery_form.dart';
@@ -12,23 +11,113 @@ class GroceryList extends StatefulWidget {
 }
 
 class _GroceryListState extends State<GroceryList> {
-  void onCreate() {
-    // TODO-4 - Navigate to the form screen using the Navigator push
-  Navigator.push( 
-      context,
-      MaterialPageRoute(
-        builder: (context) => const NewItem(),
-      ),
-    ).then((newGrocery) {
-      if (newGrocery != null) {
-        setState(() {
-          dummyGroceryItems.add(newGrocery);
-        });
-      }
-    });
-    
+  int _currenTabIndex = 0; // by default
 
+  void onCreate() async {
+    // Navigate to the form screen using the Navigator push
+    Grocery? newGrocery = await Navigator.push<Grocery>(
+      context,
+      MaterialPageRoute(builder: (context) => const GroceryForm()),
+    );
+    if (newGrocery != null) {
+      setState(() {
+        dummyGroceryItems.add(newGrocery);
+      });
+    }
   }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Your Groceries'),
+        actions: [IconButton(onPressed: onCreate, icon: const Icon(Icons.add))],
+      ),
+
+      
+
+      bottomNavigationBar: BottomNavigationBar(
+        selectedItemColor: Theme.of(context).colorScheme.primary,
+        currentIndex: _currenTabIndex,
+        onTap: (index) {
+          setState(() {
+            _currenTabIndex = index;
+          });
+        },
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.local_grocery_store),
+            label: 'Groceries',
+
+          ),
+          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
+        ],
+      ),
+
+      body: IndexedStack(
+        index: _currenTabIndex,
+        children: [GroceriesTab(), SeearchTab()],
+      ),
+    );
+  }
+}
+
+class SeearchTab extends StatefulWidget {
+  const SeearchTab({super.key});
+
+  @override
+  State<SeearchTab> createState() => _SeearchTabState();
+}
+
+class _SeearchTabState extends State<SeearchTab> {
+  String searchText = "";
+
+  void onSearchChanged(String value) {
+    setState(() {
+      searchText = value;
+    });
+  }
+
+  List<Grocery> get filteredList {
+    List<Grocery> result = [];
+    for(Grocery g in dummyGroceryItems) {
+      if (g.name.startsWith(searchText)) {
+        result.add(g);
+      }
+    }
+    return result;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(15.0),
+      child: Column(
+        children: [
+          TextField(
+            onChanged: onSearchChanged,
+            decoration: const InputDecoration(
+              labelText: 'Search',
+              prefixIcon: Icon(Icons.search),
+              border: OutlineInputBorder(),
+            ),
+          ),
+          SizedBox(height: 15),
+          Expanded(
+            child: ListView.builder(
+              itemCount: filteredList.length,
+              itemBuilder: (context, index) =>
+                  GroceryTile(grocery: filteredList[index]),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class GroceriesTab extends StatelessWidget {
+  const GroceriesTab({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -38,29 +127,22 @@ class _GroceryListState extends State<GroceryList> {
       //  Display groceries with an Item builder and  LIst Tile
       content = ListView.builder(
         itemCount: dummyGroceryItems.length,
-        itemBuilder: (context, index) => GroceryItem(grocery: dummyGroceryItems[index],),
+        itemBuilder: (context, index) =>
+            GroceryTile(grocery: dummyGroceryItems[index]),
       );
     }
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Your Groceries'),
-        actions: [IconButton(onPressed: () => {onCreate()}, icon: const Icon(Icons.add))],
-      ),
-      body: content,
-    );
+    return content;
   }
 }
 
-class GroceryItem extends StatelessWidget {
-  const GroceryItem({super.key, required this.grocery});
-
+class GroceryTile extends StatelessWidget {
+  const GroceryTile({super.key, required this.grocery});
   final Grocery grocery;
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: Container(color: grocery.category.color, width: 15, height: 15,),
+      leading: Container(width: 15, height: 15, color: grocery.category.color),
       title: Text(grocery.name),
       trailing: Text(grocery.quantity.toString()),
     );
